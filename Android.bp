@@ -1,0 +1,38 @@
+android_app {
+
+    name: "Corvus-Themes",
+    certificate: "platform",
+    privileged: true,
+    platform_apis: true,
+
+    optimize: {
+        proguard_flags_files: ["proguard.flags"],
+    },
+
+    srcs: ["src/**/*.java"],
+    resource_dirs: ["res"],
+
+    aaptflags: [
+        "--auto-add-overlay",
+        "--extra-packages",
+        "androidx.appcompat_appcompat",
+        "--extra-packages",
+        "androidx.cardview_cardview",
+        "--extra-packages",
+        "androidx.preference_preference",
+        "--extra-packages",
+        "androidx.recyclerview_recyclerview",
+    ],
+
+    static_libs: [
+        "SettingsLib",
+        "VendorSupport-preference",
+        "androidx.appcompat_appcompat",
+        "androidx.cardview_cardview",
+        "androidx-constraintlayout_constraintlayout",
+        "androidx.core_core",
+        "androidx.preference_preference",
+        "androidx.recyclerview_recyclerview",
+    ],
+
+}

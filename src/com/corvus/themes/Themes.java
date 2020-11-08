@@ -42,6 +42,7 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.graphics.drawable.Drawable;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.SystemProperties;
 import android.os.Bundle;
 import android.os.UserHandle;
 import android.os.RemoteException;
@@ -57,6 +58,7 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceFragment;
 import androidx.preference.PreferenceManager;
 import androidx.preference.PreferenceScreen;
+import androidx.preference.Preference.OnPreferenceChangeListener;
 
 import com.android.internal.util.corvus.ThemesUtils;
 import com.android.internal.util.corvus.Utils;
@@ -67,7 +69,8 @@ import java.util.Objects;
 
 import static com.corvus.themes.utils.Utils.isLiveWallpaper;
 
-public class Themes extends PreferenceFragment {
+public class Themes extends PreferenceFragment implements
+        OnPreferenceChangeListener {
 
     private static final String TAG = "Themes";
 
@@ -76,15 +79,14 @@ public class Themes extends PreferenceFragment {
     private static final String PREF_THEME_NAVBAR_PICKER = "theme_navbar_picker";
     private static final String PREF_QS_HEADER_STYLE = "qs_header_style";
     private static final String PREF_SWITCH_STYLE = "switch_style";
+    private static final String ACCENT_COLOR = "accent_color";
+    private static final String ACCENT_COLOR_PROP = "persist.sys.theme.accentcolor";
 
     public static final String PREF_THEME_NAVBAR_STYLE = "theme_navbar_style";
     public static final String PREF_ADAPTIVE_ICON_SHAPE = "adapative_icon_shape";
     public static final String PREF_FONT_PICKER = "font_picker";
     public static final String PREF_STATUSBAR_ICONS = "statusbar_icons";
     public static final String PREF_THEME_SWITCH = "theme_switch";
-
-    private static final String ACCENT_COLOR = "accent_color";
-    static final int DEFAULT_ACCENT_COLOR = 0xff1a73e8;
 
     private static boolean mUseSharedPrefListener;
     private String[] mNavbarName;
@@ -103,7 +105,9 @@ public class Themes extends PreferenceFragment {
     private Preference mNavbarPicker;
     private Preference mThemeSchedule;
     private Preference mWpPreview;
-    private ColorPickerPreference mAccentColor;
+    private IOverlayManager mOverlayService;
+    private ColorPickerPreference mThemeColor;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -113,6 +117,9 @@ public class Themes extends PreferenceFragment {
 
         mContext = getActivity();
         PreferenceScreen prefSet = getPreferenceScreen();
+
+        mOverlayService = IOverlayManager.Stub
+                .asInterface(ServiceManager.getService(Context.OVERLAY_SERVICE));
 
         ActionBar actionBar = getActivity().getActionBar();
         if (actionBar != null) {
@@ -250,35 +257,42 @@ public class Themes extends PreferenceFragment {
         }
         mSwitchStyle.setSummary(mSwitchStyle.getEntry());
 
+        setupAccentPref();
         setWallpaperPreview();
         updateNavbarSummary();
         updateThemeScheduleSummary();
+    }
 
-        mAccentColor = (ColorPickerPreference) findPreference(ACCENT_COLOR);
-        int intColor = Settings.System.getIntForUser(getContext().getContentResolver(),
-                Settings.System.ACCENT_COLOR, DEFAULT_ACCENT_COLOR, UserHandle.USER_CURRENT);
-        String hexColor = String.format("#%08x", (0xff1a73e8 & intColor));
-        mAccentColor.setNewPreviewColor(intColor);
-        mAccentColor.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object newValue) {
-                if (preference == mAccentColor) {
-                    String hex = ColorPickerPreference.convertToARGB(
-                            Integer.valueOf(String.valueOf(newValue)));
-                    int intHex = ColorPickerPreference.convertToColorInt(hex);
-                    Settings.System.putIntForUser(getContext().getContentResolver(),
-                    Settings.System.ACCENT_COLOR, intHex, UserHandle.USER_CURRENT);
-                    return true;
-                }
-                return false;
-            }
-       });
+    @Override
+    public boolean onPreferenceChange(Preference preference, Object objValue) {
+        if (preference == mThemeColor) {
+            int color = (Integer) objValue;
+            String hexColor = String.format("%08X", (0xFFFFFFFF & color));
+            SystemProperties.set(ACCENT_COLOR_PROP, hexColor);
+            try {
+                 mOverlayService.reloadAndroidAssets(UserHandle.USER_CURRENT);
+                 mOverlayService.reloadAssets("com.android.settings", UserHandle.USER_CURRENT);
+                 mOverlayService.reloadAssets("com.android.systemui", UserHandle.USER_CURRENT);
+             } catch (RemoteException ignored) {
+             }
+        }
+        return true;
     }
 
     private void setWallpaperPreview() {
         WallpaperManager wallpaperManager = WallpaperManager.getInstance(getActivity());
         Drawable wallpaperDrawable = wallpaperManager.getDrawable();
         mWpPreview.setIcon(wallpaperDrawable);
+    }
+
+    private void setupAccentPref() {
+        mThemeColor = (ColorPickerPreference) findPreference(ACCENT_COLOR);
+        String colorVal = SystemProperties.get(ACCENT_COLOR_PROP, "-1");
+        int color = "-1".equals(colorVal)
+                ? Color.WHITE
+                : Color.parseColor("#" + colorVal);
+        mThemeColor.setNewPreviewColor(color);
+        mThemeColor.setOnPreferenceChangeListener(this);
     }
 
     private int getOverlayPosition(String[] overlays) {
