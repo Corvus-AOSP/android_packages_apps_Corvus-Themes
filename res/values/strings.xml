@@ -64,6 +64,7 @@
     <string name="font_type_23">Surfer</string>
     <string name="font_type_24">Ubuntu</string>
     <string name="font_type_25">Linotte</string>
+    <string name="font_type_26">Ginto</string>
 
     <!-- Adaptive icon shapes -->
     <string name="adaptive_icon_shape_default">Default</string>
