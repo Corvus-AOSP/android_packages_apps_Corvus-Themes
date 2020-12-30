@@ -60,6 +60,13 @@
         android:entries="@array/qs_header_style_titles"
         android:entryValues="@array/qs_header_style_values" />
 
+    <!-- Custom QS header image -->
+    <Preference
+        android:key="custom_header"
+        android:fragment="com.corvus.themes.QsCustomHeaderSettings"
+        android:title="@string/custom_header_title"
+        android:summary="@string/custom_header_summary" />
+
     <ListPreference
         android:key="switch_style"
         android:title="@string/switch_style_title"
