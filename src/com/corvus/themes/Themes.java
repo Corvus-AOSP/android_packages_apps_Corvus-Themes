@@ -89,6 +89,7 @@ public class Themes extends PreferenceFragment implements
 
     private static final String PREF_ROUNDED_CORNER = "rounded_ui";
     private static final String PREF_SB_HEIGHT = "statusbar_height";
+    private static final String PREF_NB_COLOR = "navbar_color";
 
     private static boolean mUseSharedPrefListener;
     private String[] mNavbarName;
@@ -110,7 +111,7 @@ public class Themes extends PreferenceFragment implements
     private Preference mWpPreview;
     private IOverlayManager mOverlayService;
     private ColorPickerPreference mThemeColor;
-
+    private ListPreference mnbSwitch;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -123,6 +124,8 @@ public class Themes extends PreferenceFragment implements
 
         mOverlayService = IOverlayManager.Stub
                 .asInterface(ServiceManager.getService(Context.OVERLAY_SERVICE));
+
+        setupNavbarSwitchPref();
 
         ActionBar actionBar = getActivity().getActionBar();
         if (actionBar != null) {
@@ -278,7 +281,39 @@ public class Themes extends PreferenceFragment implements
 
     @Override
     public boolean onPreferenceChange(Preference preference, Object objValue) {
-        if (preference == mThemeColor) {
+        if (preference == mnbSwitch){
+        String nbSwitch = (String) objValue;
+        final Context context = getContext();
+        switch (nbSwitch) {
+            case "1":
+            handleOverlays(ThemesUtils.NAVBAR_COLOR_ORCD, false, mOverlayManager);
+            handleOverlays(ThemesUtils.NAVBAR_COLOR_OPRD, false, mOverlayManager);
+            handleOverlays(ThemesUtils.NAVBAR_COLOR_PURP, false, mOverlayManager);
+            break;
+            case "2":
+            handleOverlays(ThemesUtils.NAVBAR_COLOR_ORCD, true, mOverlayManager);
+            handleOverlays(ThemesUtils.NAVBAR_COLOR_OPRD, false, mOverlayManager);
+            handleOverlays(ThemesUtils.NAVBAR_COLOR_PURP, false, mOverlayManager);
+            break;
+            case "3":
+            handleOverlays(ThemesUtils.NAVBAR_COLOR_ORCD, false, mOverlayManager);
+            handleOverlays(ThemesUtils.NAVBAR_COLOR_OPRD, true, mOverlayManager);
+            handleOverlays(ThemesUtils.NAVBAR_COLOR_PURP, false, mOverlayManager);
+            break;
+            case "4":
+            handleOverlays(ThemesUtils.NAVBAR_COLOR_ORCD, false, mOverlayManager);
+            handleOverlays(ThemesUtils.NAVBAR_COLOR_OPRD, false, mOverlayManager);
+            handleOverlays(ThemesUtils.NAVBAR_COLOR_PURP, true, mOverlayManager);
+            break;
+        }
+        try {
+             mOverlayService.reloadAndroidAssets(UserHandle.USER_CURRENT);
+             mOverlayService.reloadAssets("com.android.settings", UserHandle.USER_CURRENT);
+             mOverlayService.reloadAssets("com.android.systemui", UserHandle.USER_CURRENT);
+         } catch (RemoteException ignored) {
+         }
+        return true;
+        } else if (preference == mThemeColor) {
             int color = (Integer) objValue;
             String hexColor = String.format("%08X", (0xFFFFFFFF & color));
             SystemProperties.set(ACCENT_COLOR_PROP, hexColor);
@@ -709,6 +744,21 @@ public class Themes extends PreferenceFragment implements
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+        }
+    }
+
+    private void setupNavbarSwitchPref() {
+        mnbSwitch = (ListPreference) findPreference(PREF_NB_COLOR);
+        mnbSwitch.setOnPreferenceChangeListener(this);
+        if (CorvusUtils.isNavbarColor("com.gnonymous.gvisualmod.pgm_purp")){
+            mnbSwitch.setValue("4");
+        } else if (CorvusUtils.isNavbarColor("com.gnonymous.gvisualmod.pgm_oprd")){
+            mnbSwitch.setValue("3");
+        } else if (CorvusUtils.isNavbarColor("com.gnonymous.gvisualmod.pgm_orcd")){
+            mnbSwitch.setValue("2");
+        }
+        else{
+            mnbSwitch.setValue("1");
         }
     }
 }
