@@ -165,6 +165,7 @@
         <item>@string/switch_contained</item>
         <item>@string/switch_retro</item>
         <item>@string/switch_stockish</item>
+        <item>@string/switch_android12</item>
     </string-array>
 
     <string-array name="switch_style_values" translatable="false">
@@ -176,6 +177,7 @@
         <item>6</item>
         <item>7</item>
         <item>8</item>
+        <item>9</item>
     </string-array>
 
     <!-- Gvisual mod -->

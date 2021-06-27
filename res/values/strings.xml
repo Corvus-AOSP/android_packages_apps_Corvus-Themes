@@ -81,6 +81,7 @@
     <string name="switch_retro">Retro</string>
     <string name="switch_stockish">Stockish</string>
     <string name="switch_style_dialog_title">Select switch style set</string>
+    <string name="switch_android12">Android 12</string>
 
     <!-- Themes -->
     <string name="theme_type_title">System theme</string>
